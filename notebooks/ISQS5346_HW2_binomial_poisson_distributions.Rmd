@@ -1,0 +1,106 @@
+---
+title: "Homework2"
+author: "Jada Malone"
+date: "2025-06-19"
+output: word_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem 1
+
+## a. Expected value and standard deviation (Binomial)
+
+```{r}
+n <- 75
+p <- 0.45
+expected_value <- n * p
+std_dev <- sqrt(n * p * (1 - p))
+expected_value
+std_dev
+```
+
+**Explanation:**  
+The expected value is 33.75 cured patients, and the standard deviation is approximately 4.31.
+
+---
+
+## b. Probability distribution of all values (numerical and graphical)
+
+```{r}
+x_vals <- 0:n
+prob_vals <- dbinom(x_vals, size = n, prob = p)
+
+head(data.frame(Cured = x_vals, Probability = prob_vals), 10)
+
+barplot(prob_vals, names.arg = x_vals, 
+        main = "Binomial Distribution", xlab = "Cured Patients", 
+        ylab = "Probability", border = NA)
+```
+
+**Explanation:**  
+The distribution shows the likelihood of different cure counts, based on binomial probabilities.
+
+---
+
+## c. Probability of ≤ 30% effectiveness
+
+```{r}
+cutoff <- floor(0.30 * n)
+p_leq_30 <- pbinom(cutoff, size = n, prob = p)
+p_leq_30
+```
+
+**Explanation:**  
+There is a ~4% chance the cure rate appears to be 30% or lower, even if it's truly 45%.
+
+---
+
+## d. Simulating 10,000 trials
+
+```{r}
+set.seed(123)
+sim_trials <- rbinom(10000, n, p)
+
+mean(sim_trials)
+sd(sim_trials)
+
+hist(sim_trials, breaks = 30, main = "10,000 Simulated Trials", 
+     xlab = "Number of Cured Patients")
+```
+
+---
+
+# Problem 2
+
+## a. Expected value and standard deviation (Poisson)
+
+```{r}
+lambda <- 600
+expected_value_pois <- lambda
+std_dev_pois <- sqrt(lambda)
+expected_value_pois
+std_dev_pois
+```
+
+**Explanation:**  
+For Poisson, both expected value and variance are λ. Here, mean is 600 and SD is ~24.49.
+
+---
+
+## b. Distribution and grouped probabilities
+
+```{r}
+x_vals <- 500:700
+probs <- dpois(x_vals, lambda)
+
+plot(x_vals, probs, type = "h", main = "Poisson Distribution", 
+     xlab = "Number of Patrons", ylab = "Probability")
+
+group_probs <- sapply(seq(500, 700, by = 100), function(start) {
+  sum(dpois(start:(start + 99), lambda))
+})
+names(group_probs) <- c("500–599", "600–699", "700–799")
+group_probs
+```

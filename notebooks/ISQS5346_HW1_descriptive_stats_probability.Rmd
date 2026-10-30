@@ -1,0 +1,156 @@
+---
+title: "Homework 1"
+author: "Jada Malone"
+date: "2025-06-12"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+# Problem 1
+
+## Load Track Data
+```{r}
+track <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS5346/main/menstrack.csv")
+head(track)
+```
+
+## a. Summary Statistics for 100m and 200m Dash
+```{r}
+summary_stats <- function(x) {
+  list(
+    Mean = mean(x),
+    Median = median(x),
+    Variance = var(x),
+    Std_Dev = sd(x)
+  )
+}
+
+stats_100 <- summary_stats(track$m100)
+stats_200 <- summary_stats(track$m200)
+
+print(stats_100)
+print(stats_200)
+```
+
+## b. Mode Value Commentary
+*The mode is not analytically useful here because the data are continuous times and not likely to repeat. Therefore, mode does not provide meaningful insight in this context.*
+
+## c. Z-scores and Outliers
+```{r}
+z_scores_100 <- scale(track$m100)
+z_scores_200 <- scale(track$m200)
+
+# Most extreme observations:
+extreme_100 <- track[which.max(abs(z_scores_100)), ]
+extreme_200 <- track[which.max(abs(z_scores_200)), ]
+
+print(extreme_100)
+print(extreme_200)
+```
+*Observations with the highest absolute z-scores may be considered potential outliers.*
+
+## d. Correlation Matrix
+```{r}
+track_subset <- cbind(track$m100, track$m200, track$m3000)
+colnames(track_subset) <- c("m100", "m200", "m3000")
+
+cor_matrix <- cor(track_subset)
+print(cor_matrix)
+```
+*We observe a stronger correlation between 100m and 200m, which makes sense as they are both sprint events. The 3000m event shows a weaker correlation with sprints.*
+
+# Problem 2
+
+## Load Exit Survey Data
+```{r}
+survey <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS5346/main/pgs.csv")
+head(survey)
+```
+
+## a. Contingency Table
+```{r}
+table_fac_col <- table(survey$FacTeaching, survey$COL)
+print(table_fac_col)
+```
+
+## b. Proportion Table
+```{r}
+prop_table <- prop.table(table_fac_col)
+print(prop_table)
+```
+
+## c. P(ED and Rating = 4)
+```{r}
+print(prop_table["4", "ED"])
+```
+
+## d. P(College = BA)
+```{r}
+print(sum(prop_table[, "BA"]))
+```
+
+## e. P(Rating = 2)
+```{r}
+print(sum(prop_table["2", ]))
+```
+
+## f. P(Rating = 3 | College = AS)
+```{r}
+print(prop_table["3", "AS"] / sum(prop_table[, "AS"]))
+```
+
+## g. P(College = VPA | Rating = 5)
+```{r}
+print(prop_table["5", "VPA"] / sum(prop_table["5", ]))
+```
+
+## h. Teaching Quality Comparison (BA vs ED)
+```{r}
+barplot(table_fac_col[, c("BA", "ED")], beside = TRUE, legend = TRUE,
+        col = c("lightblue", "pink", "orange", "green", "purple"),
+        main = "Teaching Ratings: BA vs ED", ylab = "Count")
+```
+*You can interpret from the chart whether BA or ED had better teaching ratings based on the distribution.*
+
+# Problem 3
+
+## a. Expected Number of Heads (All Fair Coins)
+```{r}
+x <- expand.grid(c1 = c(0,1), c2 = c(0,1), c3 = c(0,1), c4 = c(0,1), c5 = c(0,1))
+expected_heads <- mean(rowSums(x))
+print(expected_heads)
+```
+
+## b. Simulate 10,000 Coin Flips
+```{r}
+set.seed(123)
+results <- data.frame(matrix(nrow = 10000, ncol = 5))
+results[,1] <- sample(c(0,1), 10000, replace = TRUE, prob = c(4/5, 1/5))
+results[,2] <- sample(c(0,1), 10000, replace = TRUE, prob = c(3/5, 2/5))
+results[,3] <- sample(c(0,1), 10000, replace = TRUE, prob = c(2/5, 3/5))
+results[,4] <- sample(c(0,1), 10000, replace = TRUE, prob = c(1/5, 4/5))
+results[,5] <- sample(c(0,1), 10000, replace = TRUE, prob = c(0, 1))
+
+heads_count <- rowSums(results)
+head(heads_count)
+```
+
+## c. Histogram of Heads Count
+```{r}
+hist(heads_count, main = "Histogram of Number of Heads", xlab = "Number of Heads",
+     col = "skyblue", breaks = 5)
+```
+*There are no outcomes with 0 heads because coin 5 always shows heads.*
+
+## d. Bayes' Theorem: P(Coin = 4 | Head)
+```{r}
+head_counts <- colSums(results)
+total_heads <- sum(head_counts)
+prob_coin4_given_head <- head_counts[4] / total_heads
+print(prob_coin4_given_head)
+```
+
+

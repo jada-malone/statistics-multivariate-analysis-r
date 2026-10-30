@@ -1,0 +1,139 @@
+
+---
+title: "Homework 3"
+author: "Jada Malone"
+date: "2025-12-03"
+output:
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+library(mclust)
+library(arules)
+```
+
+# Problem 1 – Factor Analysis
+
+```{r}
+r <- matrix(c(
+  1.00,0.44,0.41,0.29,0.33,0.25,
+  0.44,1.00,0.35,0.35,0.32,0.33,
+  0.41,0.35,1.00,0.16,0.19,0.18,
+  0.29,0.35,0.16,1.00,0.59,0.47,
+  0.33,0.32,0.19,0.59,1.00,0.46,
+  0.25,0.33,0.18,0.47,0.46,1.00
+), nrow=6, byrow=TRUE)
+
+colnames(r) <- rownames(r) <- c("French","English","History","Arithmetic","Algebra","Geometry")
+
+set.seed(123)
+efa2 <- factanal(covmat=r, factors=2)
+efa2
+
+efa3 <- factanal(covmat=r, factors=3)
+efa3
+
+efa2_norot <- factanal(covmat=r, factors=2, rotation="none")
+efa2_norot
+```
+
+# Problem 2 – Gene Clustering
+
+```{r}
+genes <- read.csv(
+  "https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/geneexpression.csv",
+  header=FALSE
+)
+
+sample_cor <- cor(t(genes))
+dist_cor <- as.dist(1 - sample_cor)
+
+hc_avg <- hclust(dist_cor, method="average")
+plot(hc_avg)
+
+clusters_avg <- cutree(hc_avg, k=2)
+group <- ifelse(1:nrow(genes) <= 20, "Healthy", "Diseased")
+table(group, clusters_avg)
+
+hc_comp <- hclust(dist_cor, method="complete")
+plot(hc_comp)
+clusters_comp <- cutree(hc_comp, 2)
+table(group, clusters_comp)
+
+hc_single <- hclust(dist_cor, method="single")
+plot(hc_single)
+clusters_single <- cutree(hc_single, 2)
+table(group, clusters_single)
+
+mean_diff <- apply(genes, 2, function(g){
+  abs(mean(g[group=="Healthy"]) - mean(g[group=="Diseased"]))
+})
+
+top_genes <- order(mean_diff, decreasing=TRUE)[1:10]
+top_genes
+mean_diff[top_genes]
+```
+
+# Problem 3 – Protein Data Clustering
+
+```{r}
+urlremote <- "https://raw.githubusercontent.com/"
+pathGithub <- "EricBrownTTU/ISQS6350/main/"
+filename <- "protein.csv"
+
+protein <- read.csv(paste0(urlremote, pathGithub, filename), row.names="Country")
+protein <- protein[,1:9]
+
+protein_scaled <- scale(protein)
+
+set.seed(123)
+max_k <- 10
+wss <- sapply(1:max_k, function(k){
+  kmeans(protein_scaled, centers=k, nstart=25)$tot.withinss
+})
+
+plot(1:max_k, wss, type="b")
+
+k_opt <- 3
+km_protein <- kmeans(protein_scaled, centers=k_opt, nstart=25)
+protein$Cluster <- factor(km_protein$cluster)
+split(rownames(protein), protein$Cluster)
+
+cluster_means <- aggregate(protein,
+                           by=list(Cluster=protein$Cluster),
+                           FUN=mean)
+cluster_means
+
+mc_protein <- Mclust(protein_scaled)
+summary(mc_protein)
+plot(mc_protein, what="classification")
+
+protein$MC_Cluster <- mc_protein$classification
+split(rownames(protein), protein$MC_Cluster)
+
+plot(mc_protein, what="uncertainty", dimens=c(1,9))
+```
+
+# Problem 4 – Association Rules
+
+```{r}
+courses <- read.csv(
+  "https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/Coursetopics.csv",
+  header=TRUE
+)
+
+courses_trans <- as(as.matrix(courses), "transactions")
+rules <- apriori(courses_trans,
+                 parameter=list(supp=0.10, conf=0.50, minlen=2))
+
+length(rules)
+summary(rules)
+
+rules_sorted <- sort(rules, by="lift", decreasing=TRUE)
+inspect(head(rules_sorted, 1))
+
+lhs_intro_reg <- subset(rules_sorted,
+                        lhs %pin% "Intro" & lhs %pin% "Regression")
+
+inspect(lhs_intro_reg)
+```
